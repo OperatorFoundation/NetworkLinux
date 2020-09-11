@@ -30,9 +30,15 @@ open class NWConnection
     
     public class ContentContext
     {
-        public init()
+        public static let defaultMessage = NWConnection.ContentContext(identifier: "defaultMessage")
+        
+        public static let finalMessage = NWConnection.ContentContext(identifier: "finalMessage")
+
+        public static let defaultStream = NWConnection.ContentContext(identifier: "defaultStream")
+        
+        public init(identifier: String, expiration: UInt64 = 0, priority: Double = 0.5, isFinal: Bool = false, antecedent: NWConnection.ContentContext? = nil, metadata: [NWProtocolMetadata]? = [])
         {
-            //
+            
         }
     }
     

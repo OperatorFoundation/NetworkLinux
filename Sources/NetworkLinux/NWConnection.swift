@@ -8,7 +8,7 @@
 import Foundation
 import Dispatch
 
-import SwiftSocket
+import Socket
 
 open class NWConnection
 {
@@ -37,8 +37,7 @@ open class NWConnection
     }
     
     private var usingUDP: Bool
-    private var network: URLSessionStreamTask?
-    private var client: UDPClient?
+    private var socket: Socket
     private var queue: DispatchQueue?
     
     public init?(host: NWEndpoint.Host, port: NWEndpoint.Port, using: NWParameters)
@@ -51,24 +50,32 @@ open class NWConnection
                 usingUDP = true
             }
         }
-
+        
         if(usingUDP)
         {
-            guard case let .ipv4(addr) = host else {
-                return nil
-            }
-            
-            client=UDPClient(address: addr.address, port: Int32(port.rawValue))
+            //FIXME: add udp functionality
+            return nil
         }
         else
         {
-            let session = URLSession(configuration: .default, delegate: nil, delegateQueue: nil)
-            guard case let .ipv4(addr) = host else {
+            guard let socket = try? Socket.create() else {return nil}
+            self.socket = socket
+            
+            do
+            {
+                
+                switch host
+                {
+                case .ipv4(let ipv4):
+                    try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
+                default:
+                    return nil
+                }
+            }
+            catch
+            {
                 return nil
             }
-            
-            network = session.streamTask(withHostName: addr.address, port: Int(port.rawValue))
-            network?.resume()
         }
         
         if let viability = viabilityUpdateHandler {
@@ -106,83 +113,27 @@ open class NWConnection
     
     public func send(content: Data?, contentContext: NWConnection.ContentContext, isComplete: Bool, completion: NWConnection.SendCompletion)
     {
-        if(usingUDP)
-        {
-            sendUDP(content: content, contentContext: contentContext, isComplete: isComplete, completion: completion)
-        }
-        else
-        {
-            sendTCP(content: content, contentContext: contentContext, isComplete: isComplete, completion: completion)
-        }
-    }
-
-    public func sendUDP(content: Data?, contentContext: NWConnection.ContentContext, isComplete: Bool, completion: NWConnection.SendCompletion)
-    {
-        guard let data = content else
-        {
-            switch completion
-            {
-                case .contentProcessed(let callback):
-                    let nwerr = NWError.posix(POSIXErrorCode.ECONNREFUSED)
-                    callback(nwerr)
-                    return
-                case .idempotent:
-                    return
-            }
-        }
-        
-        let maybeResult = client?.send(data: [UInt8](data))
-        guard let result = maybeResult else
-        {
-            switch completion
-            {
-            case .contentProcessed(let callback):
-                let nwerr = NWError.posix(POSIXErrorCode.ECONNREFUSED)
-                callback(nwerr)
-                return
-            case .idempotent:
-                return
-            }
-        }
-
-        switch completion
-        {
-            case .contentProcessed(let callback):
-                switch(result)
-                {
-                    case .success:
-                        callback(nil)
-                    case .failure(let error):
-                        print(error)
-                        let nwerr = NWError.posix(POSIXErrorCode.ECONNREFUSED)
-                        callback(nwerr);
-                }
-            case .idempotent:
-                return
-        }
-    }
-    
-    public func sendTCP(content: Data?, contentContext: NWConnection.ContentContext, isComplete: Bool, completion: NWConnection.SendCompletion)
-    {
         if let data = content
         {
-            network?.write(data, timeout: 0)
+            do
             {
-                (error) in
+                try self.socket.write(from: data)
                 
                 switch completion
                 {
                     case .contentProcessed(let callback):
-                        if error != nil
-                        {
-                            print(error ?? "nil")
-                            let nwerr = NWError.posix(POSIXErrorCode.ECONNREFUSED)
-                            callback(nwerr);
-                        }
-                        else
-                        {
                             callback(nil)
-                        }
+                    case .idempotent:
+                        return
+                }
+            }
+            catch
+            {
+                switch completion
+                {
+                    case .contentProcessed(let callback):
+                        let nwerr = NWError.posix(POSIXErrorCode.ECONNREFUSED)
+                        callback(nwerr);
                     case .idempotent:
                         return
                 }
@@ -212,55 +163,21 @@ open class NWConnection
     
     public func receive(minimumIncompleteLength: Int, maximumLength: Int, completion: @escaping (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void)
     {
-        if(usingUDP)
+        var data = Data()
+        
+        do
         {
-            receiveUDP(minimumIncompleteLength: minimumIncompleteLength, maximumLength: maximumLength, completion: completion)
+            let _ = try self.socket.read(into: &data)
+            completion(data, nil, false, nil)
+            return
         }
-        else
+        catch
         {
-            receiveTCP(minimumIncompleteLength: minimumIncompleteLength, maximumLength: maximumLength, completion: completion)
-        }
-    }
-
-    public func receiveUDP(minimumIncompleteLength: Int, maximumLength: Int, completion: @escaping (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void)
-    {
-        queue?.async
-        {
-            let maybeResult = self.client?.recv(minimumIncompleteLength)
-            guard let (maybeBytes, _, _) = maybeResult else
-            {
-                completion(nil, nil, false, nil)
-                return
-            }
-            
-            guard let bytes = maybeBytes else
-            {
-                completion(nil, nil, false, nil)
-                return
-            }
-            
-            completion(Data(bytes), nil, false, nil)
+            let nwerr = NWError.posix(POSIXErrorCode.ECONNREFUSED)
+            completion(nil, nil, true, nwerr)
+            return
         }
     }
     
-    public func receiveTCP(minimumIncompleteLength: Int, maximumLength: Int, completion: @escaping (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void)
-    {
-        network?.readData(ofMinLength: minimumIncompleteLength, maxLength: maximumLength, timeout: 60)
-        {
-            (data, bool, error) in
-            
-            guard error == nil else {
-                let nwerr = NWError.posix(POSIXErrorCode.ECONNREFUSED)
-                completion(nil, nil, bool, nwerr)
-                return
-            }
-            
-            guard data != nil else {
-                completion(nil, nil, bool, nil)
-                return
-            }
-            
-            completion(data, nil, bool, nil)
-        }
-    }
+    
 }

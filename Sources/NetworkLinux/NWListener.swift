@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import NIO
+import Socket
 import Dispatch
 
 public class NWListener
@@ -28,7 +28,7 @@ public class NWListener
     public var stateUpdateHandler: ((NWListener.State) -> Void)?
 
     private var usingUDP: Bool
-    private var channel: Channel?
+    private var socket: Socket
     
     public required init(using: NWParameters, on port: NWEndpoint.Port) throws
     {
@@ -48,27 +48,43 @@ public class NWListener
         
         if(usingUDP)
         {
-            let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-            let bootstrap = DatagramBootstrap(group: group)
-                // Enable SO_REUSEADDR.
-                .channelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-                .channelInitializer
-                {
-                    channel in
-                    
-                    channel.pipeline.add(handler: Handler<ByteBuffer>())
-                }
-            
-            defer
-            {
-                try! group.syncShutdownGracefully()
-            }
-            
-            channel = try! bootstrap.bind(host: "127.0.0.1", port: 2079).wait()
-            /* the Channel is now ready to send/receive datagrams */
+            //FIXME: add udp functionality
+            throw NWError.posix(POSIXErrorCode.EBADF)
+//            let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+//            let bootstrap = DatagramBootstrap(group: group)
+//                // Enable SO_REUSEADDR.
+//                .channelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
+//                .channelInitializer
+//                {
+//                    channel in
+//
+//                    channel.pipeline.add(handler: Handler<ByteBuffer>())
+//                }
+//
+//            defer
+//            {
+//                try! group.syncShutdownGracefully()
+//            }
+//
+//            channel = try! bootstrap.bind(host: "127.0.0.1", port: 2079).wait()
+//            /* the Channel is now ready to send/receive datagrams */
         }
         else
         {
+            guard let socket = try? Socket.create() else {
+                throw NWError.posix(POSIXErrorCode.EADDRINUSE)
+            }
+            self.socket = socket
+            
+            do
+            {
+                try socket.listen(on: Int(port.rawValue))
+            }
+            catch
+            {
+                throw NWError.posix(POSIXErrorCode.EADDRINUSE)
+            }
+            
         }
     }
     
@@ -77,75 +93,12 @@ public class NWListener
         if let state = stateUpdateHandler {
             state(.ready)
         }
-        
-        queue.async
-        {
-            do
-            {
-                try self.channel?.closeFuture.wait()  // Wait until the channel un-binds.
-            }
-            catch
-            {
-                print("Failed to wait for unbind")
-            }
-        }
     }
     
     public func cancel()
     {
         if let state = stateUpdateHandler {
             state(.cancelled)
-        }
-    }
-    
-    private class Handler<DataType>: ChannelInboundHandler
-    {
-        typealias InboundIn = AddressedEnvelope<DataType>
-        typealias InboundOut = AddressedEnvelope<DataType>
-        
-        enum State {
-            case fresh
-            case registered
-            case active
-        }
-        
-        var reads: [AddressedEnvelope<DataType>] = []
-        var loop: EventLoop? = nil
-        var state: State = .fresh
-
-        var readWaiters: [Int: EventLoopPromise<[AddressedEnvelope<DataType>]>] = [:]
-        
-        func channelRegistered(ctx: ChannelHandlerContext) {
-            print("channel registered")
-            self.state = .registered
-            self.loop = ctx.eventLoop
-        }
-        
-        func channelActive(ctx: ChannelHandlerContext) {
-            print("channel registered")
-            self.state = .active
-        }
-        
-        func channelRead(ctx: ChannelHandlerContext, data: NIOAny) {
-            print("channel read")
-            let data = self.unwrapInboundIn(data)
-            reads.append(data)
-            
-            if let promise = readWaiters.removeValue(forKey: reads.count) {
-                promise.succeed(result: reads)
-            }
-            
-            ctx.fireChannelRead(self.wrapInboundOut(data))
-        }
-        
-        func notifyForDatagrams(_ count: Int) -> EventLoopFuture<[AddressedEnvelope<DataType>]> {
-            print("notify for datagrams")
-            guard reads.count < count else {
-                return loop!.newSucceededFuture(result: .init(reads.prefix(count)))
-            }
-            
-            readWaiters[count] = loop!.newPromise()
-            return readWaiters[count]!.futureResult
         }
     }
 }

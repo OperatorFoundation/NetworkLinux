@@ -10,5 +10,5 @@ import Foundation
 public enum NWError: Error
 {
     case posix(POSIXErrorCode)
-    case tls(OSStatus)
+    //case tls(OSStatus)
 }

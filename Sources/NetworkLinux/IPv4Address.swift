@@ -15,4 +15,9 @@ public struct IPv4Address
     {
         self.address=address
     }
+    
+    public init?(_ rawValue: Data, _ interface: NWInterface? = nil)
+    {
+        self.address = String(Int(rawValue[0])) + "." + String(Int(rawValue[1])) + "." + String(Int(rawValue[2])) + "." + String(Int(rawValue[3]))
+    }
 }

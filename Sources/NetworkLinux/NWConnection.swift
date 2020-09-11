@@ -74,8 +74,6 @@ open class NWConnection
                 {
                 case .ipv4(let ipv4):
                     try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
-                default:
-                    return nil
                 }
             }
             catch

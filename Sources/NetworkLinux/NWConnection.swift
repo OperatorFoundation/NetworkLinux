@@ -72,8 +72,10 @@ open class NWConnection
                 
                 switch host
                 {
-                case .ipv4(let ipv4):
-                    try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
+                    case .ipv4(let ipv4):
+                        try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
+                    case .ipv6(let ipv6):
+                        try self.socket.connect(to: ipv6.address, port: Int32(port.rawValue))
                 }
             }
             catch

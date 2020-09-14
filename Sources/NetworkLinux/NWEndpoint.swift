@@ -12,6 +12,7 @@ public enum NWEndpoint
     public enum Host
     {
         case ipv4(IPv4Address)
+        case ipv6(IPv6Address)
     }
     
     public struct Port

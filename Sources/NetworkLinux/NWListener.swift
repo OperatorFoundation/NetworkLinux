@@ -30,6 +30,8 @@ public class NWListener
     private var usingUDP: Bool
     private var socket: Socket
     
+    // Note: It is unclear from the documentation how to use the Network framework to listen on a IPv6 address, or if this is even possible.
+    // Therefore, this is not currently supported in NetworkLinux.
     public required init(using: NWParameters, on port: NWEndpoint.Port) throws
     {
         self.parameters=using
@@ -48,30 +50,7 @@ public class NWListener
         
         if(usingUDP)
         {
-            //FIXME: add udp functionality
-            throw NWError.posix(POSIXErrorCode.EBADF)
-//            let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-//            let bootstrap = DatagramBootstrap(group: group)
-//                // Enable SO_REUSEADDR.
-//                .channelOption(ChannelOptions.socket(SocketOptionLevel(SOL_SOCKET), SO_REUSEADDR), value: 1)
-//                .channelInitializer
-//                {
-//                    channel in
-//
-//                    channel.pipeline.add(handler: Handler<ByteBuffer>())
-//                }
-//
-//            defer
-//            {
-//                try! group.syncShutdownGracefully()
-//            }
-//
-//            channel = try! bootstrap.bind(host: "127.0.0.1", port: 2079).wait()
-//            /* the Channel is now ready to send/receive datagrams */
-        }
-        else
-        {
-            guard let socket = try? Socket.create() else {
+            guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.datagram, proto: .udp) else {
                 throw NWError.posix(POSIXErrorCode.EADDRINUSE)
             }
             self.socket = socket
@@ -84,7 +63,22 @@ public class NWListener
             {
                 throw NWError.posix(POSIXErrorCode.EADDRINUSE)
             }
+        }
+        else
+        {
+            guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.stream, proto: .tcp) else {
+                throw NWError.posix(POSIXErrorCode.EADDRINUSE)
+            }
+            self.socket = socket
             
+            do
+            {
+                try socket.listen(on: Int(port.rawValue))
+            }
+            catch
+            {
+                throw NWError.posix(POSIXErrorCode.EADDRINUSE)
+            }
         }
     }
     

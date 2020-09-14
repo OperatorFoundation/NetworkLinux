@@ -59,22 +59,38 @@ open class NWConnection
         
         if(usingUDP)
         {
-            //FIXME: add udp functionality
-            return nil
-        }
-        else
-        {
-            guard let socket = try? Socket.create() else {return nil}
-            self.socket = socket
-            
             do
             {
-                
                 switch host
                 {
                     case .ipv4(let ipv4):
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.datagram, proto: Socket.SocketProtocol.udp) else {return nil}
+                        self.socket = socket
                         try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
                     case .ipv6(let ipv6):
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.datagram, proto: Socket.SocketProtocol.udp) else {return nil}
+                        self.socket = socket
+                        try self.socket.connect(to: ipv6.address, port: Int32(port.rawValue))
+                }
+            }
+            catch
+            {
+                return nil
+            }
+        }
+        else
+        {
+            do
+            {
+                switch host
+                {
+                    case .ipv4(let ipv4):
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.stream, proto: Socket.SocketProtocol.tcp) else {return nil}
+                        self.socket = socket
+                        try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
+                    case .ipv6(let ipv6):
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.stream, proto: Socket.SocketProtocol.tcp) else {return nil}
+                        self.socket = socket
                         try self.socket.connect(to: ipv6.address, port: Int32(port.rawValue))
                 }
             }

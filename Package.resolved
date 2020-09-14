@@ -9,6 +9,15 @@
           "revision": "90212ea8b66787c2d51d03527a04748ba6ee7679",
           "version": "1.1.0"
         }
+      },
+      {
+        "package": "SwiftHexTools",
+        "repositoryURL": "https://github.com/OperatorFoundation/SwiftHexTools",
+        "state": {
+          "branch": null,
+          "revision": "4ce4a4f66eea05c900d447af8c07ecaac720716c",
+          "version": "1.2.2"
+        }
       }
     ]
   },

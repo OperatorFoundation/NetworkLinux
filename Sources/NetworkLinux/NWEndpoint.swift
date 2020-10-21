@@ -21,7 +21,7 @@ public enum NWEndpoint
         
         public init(integerLiteral: UInt16)
         {
-            self.rawValue=literal
+            self.rawValue=integerLiteral
         }
     }
     

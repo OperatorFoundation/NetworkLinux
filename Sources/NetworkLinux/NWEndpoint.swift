@@ -19,7 +19,7 @@ public enum NWEndpoint
     {
         public var rawValue: UInt16
         
-        public init?(rawValue: UInt16)
+        public init(rawValue: UInt16)
         {
             self.rawValue=rawValue
         }

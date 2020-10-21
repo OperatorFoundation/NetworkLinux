@@ -10,7 +10,7 @@ import Dispatch
 
 import Socket
 
-open class NWConnection
+public class NWConnection
 {
     public enum State
     {
@@ -43,10 +43,10 @@ open class NWConnection
     }
     
     private var usingUDP: Bool
-    private var socket: Socket
+    private var socket: Socket? = nil
     private var queue: DispatchQueue?
     
-    public init?(host: NWEndpoint.Host, port: NWEndpoint.Port, using: NWParameters)
+    public init(host: NWEndpoint.Host, port: NWEndpoint.Port, using: NWParameters)
     {
         usingUDP = false
         
@@ -64,18 +64,18 @@ open class NWConnection
                 switch host
                 {
                     case .ipv4(let ipv4):
-                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.datagram, proto: Socket.SocketProtocol.udp) else {return nil}
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.datagram, proto: Socket.SocketProtocol.udp) else {return}
                         self.socket = socket
-                        try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
+                        try socket.connect(to: ipv4.address, port: Int32(port.rawValue))
                     case .ipv6(let ipv6):
-                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.datagram, proto: Socket.SocketProtocol.udp) else {return nil}
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.datagram, proto: Socket.SocketProtocol.udp) else {return}
                         self.socket = socket
-                        try self.socket.connect(to: ipv6.address, port: Int32(port.rawValue))
+                        try socket.connect(to: ipv6.address, port: Int32(port.rawValue))
                 }
             }
             catch
             {
-                return nil
+                return
             }
         }
         else
@@ -85,18 +85,18 @@ open class NWConnection
                 switch host
                 {
                     case .ipv4(let ipv4):
-                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.stream, proto: Socket.SocketProtocol.tcp) else {return nil}
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet, type: Socket.SocketType.stream, proto: Socket.SocketProtocol.tcp) else {return}
                         self.socket = socket
-                        try self.socket.connect(to: ipv4.address, port: Int32(port.rawValue))
+                        try socket.connect(to: ipv4.address, port: Int32(port.rawValue))
                     case .ipv6(let ipv6):
-                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.stream, proto: Socket.SocketProtocol.tcp) else {return nil}
+                        guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.stream, proto: Socket.SocketProtocol.tcp) else {return}
                         self.socket = socket
-                        try self.socket.connect(to: ipv6.address, port: Int32(port.rawValue))
+                        try socket.connect(to: ipv6.address, port: Int32(port.rawValue))
                 }
             }
             catch
             {
-                return nil
+                return
             }
         }
         
@@ -135,11 +135,13 @@ open class NWConnection
     
     public func send(content: Data?, contentContext: NWConnection.ContentContext, isComplete: Bool, completion: NWConnection.SendCompletion)
     {
+        guard let socket = self.socket else {return}
+
         if let data = content
         {
             do
             {
-                try self.socket.write(from: data)
+                try socket.write(from: data)
                 
                 switch completion
                 {
@@ -186,10 +188,12 @@ open class NWConnection
     public func receive(minimumIncompleteLength: Int, maximumLength: Int, completion: @escaping (Data?, NWConnection.ContentContext?, Bool, NWError?) -> Void)
     {
         var data = Data()
+
+        guard let socket = self.socket else {return}
         
         do
         {
-            let _ = try self.socket.read(into: &data)
+            let _ = try socket.read(into: &data)
             completion(data, nil, false, nil)
             return
         }

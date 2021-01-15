@@ -71,6 +71,8 @@ public class NWConnection
                         guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.datagram, proto: Socket.SocketProtocol.udp) else {return}
                         self.socket = socket
                         try socket.connect(to: ipv6.address, port: Int32(port.rawValue))
+                    default:
+                        return
                 }
             }
             catch
@@ -92,6 +94,8 @@ public class NWConnection
                         guard let socket = try? Socket.create(family: Socket.ProtocolFamily.inet6, type: Socket.SocketType.stream, proto: Socket.SocketProtocol.tcp) else {return}
                         self.socket = socket
                         try socket.connect(to: ipv6.address, port: Int32(port.rawValue))
+                    default:
+                        return
                 }
             }
             catch

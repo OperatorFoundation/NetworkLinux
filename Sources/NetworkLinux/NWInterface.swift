@@ -9,5 +9,12 @@ import Foundation
 
 public class NWInterface
 {
-    
+    public enum InterfaceType
+    {
+        case wifi
+        case cellular
+        case wiredEthernet
+        case loopback
+        case other
+    }
 }

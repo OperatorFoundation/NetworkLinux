@@ -73,7 +73,7 @@ public class NWListener
             
             do
             {
-                try socket.listen(on: Int(port.rawValue))
+                try socket.listen(on: Int(port.rawValue), node: "0.0.0.0")
             }
             catch
             {

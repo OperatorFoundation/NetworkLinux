@@ -134,7 +134,7 @@ public class NWConnection
         }
     }
     
-    public var stateUpdateHandler: ((NWConnection.NWState) -> Void)?
+    public var stateUpdateHandler: ((NWConnection.State) -> Void)?
     public var viabilityUpdateHandler: ((Bool) -> Void)?
     
     public func send(content: Data?, contentContext: NWConnection.ContentContext, isComplete: Bool, completion: NWConnection.SendCompletion)

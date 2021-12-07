@@ -12,7 +12,7 @@ import Socket
 
 public class NWConnection
 {
-    public enum State
+    public enum NWState
     {
         case cancelled
         case failed(NWError)
@@ -134,18 +134,20 @@ public class NWConnection
         }
     }
     
-    public var stateUpdateHandler: ((NWConnection.State) -> Void)?
+    public var stateUpdateHandler: ((NWConnection.NWState) -> Void)?
     public var viabilityUpdateHandler: ((Bool) -> Void)?
     
     public func send(content: Data?, contentContext: NWConnection.ContentContext, isComplete: Bool, completion: NWConnection.SendCompletion)
     {
+        
         guard let socket = self.socket else {return}
 
         if let data = content
         {
             do
             {
-                try socket.write(from: data)
+                let bytesWritten = try socket.write(from: data)
+                print("bytes written: \(bytesWritten) data count: \(data.count) function: \(#function) file: \(#file), line: \(#line)")
                 
                 switch completion
                 {
@@ -157,6 +159,7 @@ public class NWConnection
             }
             catch
             {
+                print("error: \(error) caught in function: \(#function) file: \(#file), line: \(#line)")
                 switch completion
                 {
                     case .contentProcessed(let callback):

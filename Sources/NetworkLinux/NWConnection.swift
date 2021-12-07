@@ -12,7 +12,7 @@ import Socket
 
 public class NWConnection
 {
-    public enum NWState
+    public enum State
     {
         case cancelled
         case failed(NWError)

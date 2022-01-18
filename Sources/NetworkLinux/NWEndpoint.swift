@@ -49,7 +49,13 @@ public enum NWEndpoint
         
         public init(integerLiteral: UInt16)
         {
-            self.rawValue=integerLiteral
+            self.rawValue = integerLiteral
+        }
+        
+        // This label coincides with Apple's NWEndpoint.Port initializer
+        public init(rawValue: UInt16)
+        {
+            self.rawValue = rawValue
         }
     }
     

@@ -7,10 +7,36 @@
 
 import Foundation
 
-public enum NWEndpoint
+public enum NWEndpoint: Equatable
 {
-    public enum Host
+    public enum Host: Equatable
     {
+        public static func == (lhs: NWEndpoint.Host, rhs: NWEndpoint.Host) -> Bool {
+            switch lhs {
+                case .ipv4(let leftIPv4):
+                    switch rhs {
+                        case .ipv4(let rightIPv4):
+                            return leftIPv4 == rightIPv4
+                        default:
+                            return false
+                    }
+                case .ipv6(let leftIPv6):
+                    switch rhs {
+                        case .ipv6(let rightIPv6):
+                            return leftIPv6 == rightIPv6
+                        default:
+                            return false
+                    }
+                case .name(let leftNameString, _):
+                    switch rhs {
+                        case .name(let rightNameString, _):
+                            return leftNameString == rightNameString
+                        default:
+                            return false
+                    }
+            }
+        }
+        
         case ipv4(IPv4Address)
         case ipv6(IPv6Address)
         case name(String, NWInterface?)
@@ -43,7 +69,7 @@ public enum NWEndpoint
         }
     }
     
-    public struct Port
+    public struct Port: Equatable
     {
         public var rawValue: UInt16
         

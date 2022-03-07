@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct IPv4Address
+public struct IPv4Address: Equatable
 {
     public var address: String
     public var rawValue: Data

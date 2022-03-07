@@ -8,7 +8,7 @@
 import Foundation
 import SwiftHexTools
 
-public struct IPv6Address
+public struct IPv6Address: Equatable
 {
     public var address: String
     public var rawValue: Data

@@ -7,9 +7,9 @@
 
 import Foundation
 
-public enum NWEndpoint: Equatable
+public enum NWEndpoint: Equatable, Hashable
 {
-    public enum Host: Equatable
+    public enum Host: Equatable, Hashable
     {
         public static func == (lhs: NWEndpoint.Host, rhs: NWEndpoint.Host) -> Bool {
             switch lhs {
@@ -67,9 +67,20 @@ public enum NWEndpoint: Equatable
                 }
             }
         }
+        
+        public func hash(into hasher: inout Hasher) {
+            switch self {
+                case .ipv4(let ipv4):
+                    hasher.combine(ipv4)
+                case .ipv6(let ipv6):
+                    hasher.combine(ipv6)
+                case .name(let nameString, _):
+                    hasher.combine(nameString)
+            }
+        }
     }
     
-    public struct Port: Equatable
+    public struct Port: Equatable, Hashable
     {
         public var rawValue: UInt16
         
@@ -82,6 +93,10 @@ public enum NWEndpoint: Equatable
         public init(rawValue: UInt16)
         {
             self.rawValue = rawValue
+        }
+        
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(rawValue)
         }
     }
     

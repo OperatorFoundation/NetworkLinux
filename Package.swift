@@ -12,8 +12,8 @@ let package = Package(
             targets: ["NetworkLinux"]),
     ],
     dependencies: [
-        .package(name: "Socket", url: "https://github.com/OperatorFoundation/BlueSocket.git", branch: "main"),
-        .package(url: "https://github.com/OperatorFoundation/SwiftHexTools.git", branch: "main"),
+        .package(name: "Socket", url: "https://github.com/OperatorFoundation/BlueSocket.git", branch: "release"),
+        .package(url: "https://github.com/OperatorFoundation/SwiftHexTools.git", from: "1.2.6"),
     ],
     targets: [
         .target(

@@ -12,7 +12,7 @@ let package = Package(
             targets: ["NetworkLinux"]),
     ],
     dependencies: [
-        .package(name: "Socket", url: "https://github.com/OperatorFoundation/BlueSocket.git", branch: "release"),
+        .package(name: "Socket", url: "https://github.com/OperatorFoundation/BlueSocket.git", branch: "1.1.1"),
         .package(url: "https://github.com/OperatorFoundation/SwiftHexTools.git", from: "1.2.6"),
     ],
     targets: [

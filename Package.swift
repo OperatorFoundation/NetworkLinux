@@ -12,13 +12,16 @@ let package = Package(
             targets: ["NetworkLinux"]),
     ],
     dependencies: [
-        .package(name: "Socket", url: "https://github.com/OperatorFoundation/BlueSocket.git", branch: "1.1.1"),
-        .package(url: "https://github.com/OperatorFoundation/SwiftHexTools.git", from: "1.2.6"),
+        .package(url: "https://github.com/OperatorFoundation/BlueSocket", from: "1.1.1"),
+        .package(url: "https://github.com/OperatorFoundation/SwiftHexTools", from: "1.2.6"),
     ],
     targets: [
         .target(
             name: "NetworkLinux",
-            dependencies: ["Socket", "SwiftHexTools"]),
+            dependencies: [
+                "SwiftHexTools",
+                .product(name: "Socket", package: "BlueSocket")
+            ]),
         .testTarget(
             name: "NetworkLinuxTests",
             dependencies: ["NetworkLinux"]),
